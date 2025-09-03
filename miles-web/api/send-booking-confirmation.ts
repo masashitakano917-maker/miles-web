@@ -1,38 +1,75 @@
-// 例：BookingPage.tsx 内
-const sendBookingConfirmation = async () => {
-  try {
-    const bookingDetails = {
-      customerName: `${bookingData.firstName} ${bookingData.lastName}`,
-      customerEmail: bookingData.email,
-      experienceTitle: experience.title,
-      experienceLocation: experience.location,
-      bookingDate: bookingData.date,
-      numberOfGuests: bookingData.guests,
-      totalPrice: totalPrice, // サーバー側でも再計算が望ましい
-      specialRequests: bookingData.specialRequests,
-      bookingId: `MILES-${Date.now()}`,
-    };
+// api/send-booking-confirmation.ts
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Resend } from 'resend';
 
-    const r = await fetch('/api/send-booking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookingDetails),
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+function setCors(res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+
+  try {
+    const {
+      customerName,
+      customerEmail,
+      experienceTitle,
+      experienceLocation,
+      bookingDate,
+      numberOfGuests,
+      totalPrice,
+      specialRequests,
+      bookingId,
+      bookingTime,
+    } = (req.body || {}) as Record<string, any>;
+
+    if (!experienceTitle || !bookingDate || !numberOfGuests) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    const FROM = process.env.RESEND_FROM || 'onboarding@resend.dev';
+    const TO_OWNER = process.env.RESEND_TO;
+
+    if (!process.env.RESEND_API_KEY || !FROM || !TO_OWNER) {
+      return res.status(500).json({ success: false, error: 'Server email config missing' });
+    }
+
+    const subject = `New Booking: ${experienceTitle} (${bookingDate})`;
+    const text = [
+      `A new booking has been placed.`,
+      ``,
+      `Booking ID: ${bookingId}`,
+      `Time: ${bookingTime}`,
+      `Name: ${customerName || '-'}`,
+      `Email: ${customerEmail || '-'}`,
+      `Experience: ${experienceTitle}`,
+      `Location: ${experienceLocation || '-'}`,
+      `Date: ${bookingDate}`,
+      `Guests: ${numberOfGuests}`,
+      `Total: ${totalPrice}`,
+      `Requests: ${specialRequests || '-'}`,
+    ].join('\n');
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: [TO_OWNER],
+      subject,
+      text,
     });
 
-    const data = await r.json();
-    console.log('booking api result:', data);
-
-    if (data.ok) {
-      alert(
-        data.mode === 'sandbox'
-          ? '管理者に通知を送りました（sandbox）。ドメイン検証後はお客様にも自動送信されます。'
-          : '予約が確定しました！確認メールをお送りしました。'
-      );
-    } else {
-      alert('予約は保存されましたが、メール送信に失敗しました。サポートへご連絡ください。');
+    if (error) {
+      return res.status(500).json({ success: false, detail: JSON.stringify(error) });
     }
-  } catch (e) {
-    console.error(e);
-    alert('通信エラーが発生しました。時間をおいて再度お試しください。');
+
+    // ※ テスト環境ではお客様宛て送信は行わない（Resendの制限対策）
+    return res.status(200).json({ success: true });
+  } catch (e: any) {
+    return res.status(500).json({ success: false, detail: String(e?.message || e) });
   }
-};
+}
