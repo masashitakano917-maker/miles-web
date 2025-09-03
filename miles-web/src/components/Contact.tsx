@@ -23,7 +23,7 @@ const Contact = () => {
     try {
       console.log('Sending email with data:', formData);
       
-      const response = await fetch('https://szthaaaknsepatmlcvrn.supabase.co/functions/v1/send-email', {
+      const response = await fetch('re_5GU2phC5_4g9Hf9exN55gYC5fbH5yssrx/functions/v1/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
