@@ -66,7 +66,7 @@ const AboutMiles = () => {
             <img
               src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=800"
               alt="Locals and travelers sharing a moment"
-              className="w-full h-[320px] md:h-[420px] object-cover rounded-2xl shadow-lg border border-slate-100"
+              className="rounded-2xl shadow-2xl w-full h-96 object-cover"
             />
             <div className="absolute -z-10 -bottom-6 -left-6 w-40 h-40 bg-orange-100 rounded-3xl blur-2xl opacity-70"></div>
           </div>
