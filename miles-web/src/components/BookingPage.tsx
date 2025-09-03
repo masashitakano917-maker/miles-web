@@ -18,11 +18,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ experience, onBack }) => {
   });
 
   const [currentStep, setCurrentStep] = useState(1);
-+
-+  // ページを開いたら最上部へスクロール
-+  useEffect(() => {
-+    window.scrollTo({ top: 0, behavior: 'smooth' });
-+  }, []);
+
+ // ページを開いたら最上部へスクロール
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
