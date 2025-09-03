@@ -23,13 +23,16 @@ const Contact = () => {
     try {
       console.log('Sending email with data:', formData);
       
-      const response = await fetch('re_5GU2phC5_4g9Hf9exN55gYC5fbH5yssrx', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const r = await fetch('re_5GU2phC5_4g9Hf9exN55gYC5fbH5yssrx', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: formData.name,
+    email: formData.email,
+    subject: formData.subject || 'Contact',
+    message: formData.message,
+  }),
+});
 
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
