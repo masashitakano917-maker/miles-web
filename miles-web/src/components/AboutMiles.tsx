@@ -64,7 +64,7 @@ const AboutMiles = () => {
           {/* Visual */}
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1529336953121-a0fc9a95c4a8?q=80&w=1600&auto=format&fit=crop"
+              src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=800"
               alt="Locals and travelers sharing a moment"
               className="w-full h-[320px] md:h-[420px] object-cover rounded-2xl shadow-lg border border-slate-100"
             />
