@@ -12,18 +12,14 @@ const AboutMiles = () => {
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
-  return (
-    <section
-      id="about"
-      className="relative py-20 bg-gradient-to-b from-slate-50 to-white"
-    >
+    return (
+    <section id="about" className="py-20 bg-gradient-to-r from-blue-50 to-orange-50">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Heading */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             About <span className="text-orange-500">Miles</span>
           </h2>
-          <p className="mt-4 text-lg md:text-xl text-slate-600">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             We’re just getting started. Miles connects travelers with passionate locals
             for experiences that feel human—stories shared over a walk, a meal,
             or an afternoon in someone’s neighborhood.
