@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, Users, CreditCard, Shield, Check } from 'lucide-react';
 
 interface BookingPageProps {
@@ -18,6 +18,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ experience, onBack }) => {
   });
 
   const [currentStep, setCurrentStep] = useState(1);
++
++  // ページを開いたら最上部へスクロール
++  useEffect(() => {
++    window.scrollTo({ top: 0, behavior: 'smooth' });
++  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
