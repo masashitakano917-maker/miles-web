@@ -1,65 +1,86 @@
 // api/send-booking-confirmation.ts
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
-function cors(res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
+export default async function handler(req: Request) {
+  // Preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  cors(res);
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ success: true, message: 'ok' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  }
 
   try {
-    const b = (req.body || {}) as Record<string, any>;
-    const FROM = process.env.RESEND_FROM || 'onboarding@resend.dev';
-    const TO   = process.env.RESEND_TO;
+    const body = await req.json();
 
-    // 予約内容（最低限だけチェック）
-    if (!b.experienceTitle || !b.bookingDate || !b.numberOfGuests) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
-    if (!process.env.RESEND_API_KEY || !TO) {
-      return res.status(500).json({ success: false, error: 'Server email config missing' });
-    }
-
-    // 管理者宛てのみ送信（Resend の“テスト制限”を回避）
-    const subject = `New Booking: ${b.experienceTitle} (${b.bookingDate})`;
-    const text = [
-      `A new booking has been placed.`,
-      ``,
-      `Booking ID: ${b.bookingId}`,
-      `Time: ${b.bookingTime}`,
-      `Name: ${b.customerName || '-'}`,
-      `Email: ${b.customerEmail || '-'}`,
-      `Experience: ${b.experienceTitle}`,
-      `Location: ${b.experienceLocation || '-'}`,
-      `Date: ${b.bookingDate}`,
-      `Guests: ${b.numberOfGuests}`,
-      `Total: ${b.totalPrice}`,
-      `Requests: ${b.specialRequests || '-'}`,
-    ].join('\n');
-
-    let delivered = false;
-    try {
-      const { error } = await resend.emails.send({ from: FROM, to: [TO], subject, text });
-      if (error) throw error;
-      delivered = true;
-    } catch (e) {
-      // ここで失敗しても UI は成功扱いにする（ログだけ残す）
-      console.error('[send-booking-confirmation] send error:', e);
+    // 必須ENVチェック
+    const API_KEY = process.env.RESEND_API_KEY;
+    const FROM = process.env.RESEND_FROM;
+    const TO = process.env.RESEND_TO;
+    if (!API_KEY || !FROM || !TO) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          status: 500,
+          detail: 'Missing RESEND_API_KEY / RESEND_FROM / RESEND_TO',
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
-    // UI は success:true を見て“エラーアラート”を出さない
-    return res.status(200).json({ success: true, delivered });
+    const resend = new Resend(API_KEY);
+
+    // Sandbox 対応：from が resend.dev の場合は運用者宛だけ送信
+    // 本番（独自ドメイン認証後）は必要に応じて body.customerEmail へも送付してOK
+    const toList = [TO];
+
+    const subject = `[Miles] New booking: ${body.experienceTitle ?? 'Experience'}`;
+    const lines = [
+      `Booking ID: ${body.bookingId}`,
+      `When: ${body.bookingDate} (${body.bookingTime})`,
+      `Experience: ${body.experienceTitle} @ ${body.experienceLocation}`,
+      `Guests: ${body.numberOfGuests}`,
+      `Total: $${body.totalPrice}`,
+      `Customer: ${body.customerName} <${body.customerEmail}>`,
+      `Special Requests: ${body.specialRequests || '-'}`,
+    ];
+    const text = lines.join('\n');
+    const html = `<pre style="font-size:14px;line-height:1.6">${text}</pre>`;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM,
+      to: toList,
+      subject,
+      text,
+      html,
+      reply_to: body.customerEmail || undefined,
+    });
+
+    if (error) {
+      return new Response(
+        JSON.stringify({ success: false, status: 502, detail: error.message || String(error) }),
+        { status: 502, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    return new Response(JSON.stringify({ success: true, id: data?.id }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
   } catch (e: any) {
-    console.error('[send-booking-confirmation] handler error:', e);
-    // 念のため UI は成功扱い（予約自体は通った前提のため）
-    return res.status(200).json({ success: true, delivered: false, note: 'handled with fallback' });
+    return new Response(
+      JSON.stringify({ success: false, status: 500, detail: e?.message || String(e) }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
   }
 }
