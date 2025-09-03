@@ -1,88 +1,85 @@
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../state/AuthProvider";
-import { supabase } from "../lib/supabase";
-import { LogOut } from "lucide-react";
+// /src/components/Account.tsx
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../state/AuthProvider';
+import { supabase } from '../lib/supabaseClient';
 
 type Booking = {
   id: string;
-  user_id: string;
   experience_title: string;
-  date: string;     // ISO
+  date: string;
   guests: number;
-  amount: number;   // cents or JPY integer
-  currency: string; // "JPY" etc
-  status: string;   // "confirmed" | "pending" | ...
+  amount: number;
+  currency: string;
+  status: string;
   created_at: string;
 };
 
 const Account: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (!error && data) setBookings(data as any);
-      setLoading(false);
-    })();
-  }, [user]);
+    const load = async () => {
+      setLoading(true);
+      // 本来は user_id = user?.id で絞り込む（開発ポリシー次第で全件返る設定でもOK）
+      let query = supabase
+        .from('bookings')
+        .select('id, experience_title, date, guests, amount, currency, status, created_at')
+        .order('created_at', { ascending: false });
 
-  if (!user) return <p className="text-center text-slate-600">Please log in.</p>;
+      if (user?.id) query = query.eq('user_id', user.id);
+
+      const { data, error } = await query;
+      if (!error && data) setBookings(data as Booking[]);
+      setLoading(false);
+    };
+    load();
+  }, [user?.id]);
+
+  if (!user) {
+    return (
+      <div className="max-w-5xl mx-auto px-4">
+        <h1 className="text-3xl font-bold mt-6 mb-4">My Account</h1>
+        <p>Please log in to view your bookings.</p>
+      </div>
+    );
+  }
 
   return (
-    <section id="account" className="py-16 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-slate-900">My Account</h2>
-          <button onClick={signOut} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border hover:bg-slate-100">
-            <LogOut className="w-4 h-4" /> Log out
-          </button>
-        </div>
+    <div className="max-w-5xl mx-auto px-4">
+      <h1 className="text-3xl font-bold mt-6 mb-6">My Account</h1>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Profile card */}
-          <div className="bg-white rounded-2xl shadow-sm border p-6">
-            <h3 className="font-semibold text-slate-900 mb-2">Profile</h3>
-            <p className="text-slate-700"><span className="font-medium">Email:</span> {user.email}</p>
-          </div>
-
-          {/* Bookings list (wide) */}
-          <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border p-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Bookings</h3>
-            {loading ? (
-              <p className="text-slate-600">Loading...</p>
-            ) : bookings.length === 0 ? (
-              <p className="text-slate-600">No bookings yet.</p>
-            ) : (
-              <div className="divide-y">
-                {bookings.map(b => (
-                  <div key={b.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-slate-900">{b.experience_title}</p>
-                      <p className="text-sm text-slate-600">
-                        {new Date(b.date).toLocaleDateString()} ・ {b.guests} guest(s) ・ {b.status}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-slate-900">
-                        {b.currency} {b.amount}
-                      </p>
-                      <p className="text-xs text-slate-500">{new Date(b.created_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="bg-white rounded-xl shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Profile</h2>
+        <p className="text-gray-700">Email: <span className="font-medium">{user.email}</span></p>
       </div>
-    </section>
+
+      <div className="bg-white rounded-xl shadow p-6 mt-8">
+        <h2 className="text-xl font-semibold mb-4">Booking History</h2>
+        {loading ? (
+          <p>Loading…</p>
+        ) : bookings.length === 0 ? (
+          <p>No bookings yet.</p>
+        ) : (
+          <ul className="divide-y">
+            {bookings.map((b) => (
+              <li key={b.id} className="py-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{b.experience_title}</p>
+                  <p className="text-sm text-gray-600">
+                    {b.date} ・ {b.guests} guest(s) ・ {b.status}
+                  </p>
+                </div>
+                <div className="font-semibold">
+                  {(b.currency === 'USD' ? '$' : '¥')}{b.amount.toLocaleString()}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 };
 
