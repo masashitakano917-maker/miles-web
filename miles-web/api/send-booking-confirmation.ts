@@ -1,55 +1,38 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
-
+// 例：BookingPage.tsx 内
+const sendBookingConfirmation = async () => {
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const { customerName, customerEmail, experienceTitle, experienceLocation,
-            bookingDate, numberOfGuests, totalPrice, specialRequests, bookingId, bookingTime } = body;
+    const bookingDetails = {
+      customerName: `${bookingData.firstName} ${bookingData.lastName}`,
+      customerEmail: bookingData.email,
+      experienceTitle: experience.title,
+      experienceLocation: experience.location,
+      bookingDate: bookingData.date,
+      numberOfGuests: bookingData.guests,
+      totalPrice: totalPrice, // サーバー側でも再計算が望ましい
+      specialRequests: bookingData.specialRequests,
+      bookingId: `MILES-${Date.now()}`,
+    };
 
-    const apiKey = process.env.RESEND_API_KEY;
-    const from   = process.env.RESEND_FROM;
-    const admin  = process.env.RESEND_TO;
+    const r = await fetch('/api/send-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookingDetails),
+    });
 
-    if (apiKey && from && admin) {
-      const html = `
-        <h3>Booking Confirmation</h3>
-        <p><b>Booking ID:</b> ${bookingId}</p>
-        <p><b>Name:</b> ${customerName}</p>
-        <p><b>Email:</b> ${customerEmail}</p>
-        <p><b>Experience:</b> ${experienceTitle}</p>
-        <p><b>Location:</b> ${experienceLocation}</p>
-        <p><b>Date:</b> ${bookingDate}</p>
-        <p><b>Guests:</b> ${numberOfGuests}</p>
-        <p><b>Total:</b> $${totalPrice}</p>
-        <p><b>Requests:</b> ${specialRequests || '-'}</p>
-        <p><small>Created at ${bookingTime}</small></p>`;
+    const data = await r.json();
+    console.log('booking api result:', data);
 
-      const adminReq = fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [admin], subject: `New Booking: ${experienceTitle}`, html })
-      });
-
-      const userReq = customerEmail ? fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [customerEmail], subject: `Your booking is confirmed - ${experienceTitle}`, html })
-      }) : Promise.resolve({ ok: true } as any);
-
-      const [a,u]: any = await Promise.all([adminReq, userReq]);
-      if (!a.ok || (customerEmail && !u.ok)) return res.status(502).json({ success: false });
-
-      return res.status(200).json({ success: true });
+    if (data.ok) {
+      alert(
+        data.mode === 'sandbox'
+          ? '管理者に通知を送りました（sandbox）。ドメイン検証後はお客様にも自動送信されます。'
+          : '予約が確定しました！確認メールをお送りしました。'
+      );
+    } else {
+      alert('予約は保存されましたが、メール送信に失敗しました。サポートへご連絡ください。');
     }
-
-    return res.status(200).json({ success: true, note: 'Email provider not configured.' });
-  } catch (e:any) {
-    return res.status(500).json({ success: false, error: e?.message || String(e) });
+  } catch (e) {
+    console.error(e);
+    alert('通信エラーが発生しました。時間をおいて再度お試しください。');
   }
-}
+};
