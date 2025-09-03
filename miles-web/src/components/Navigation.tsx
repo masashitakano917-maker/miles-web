@@ -30,8 +30,7 @@ const Navigation = () => {
 
   const navItems = [
     { label: "Explore Experiences", id: "explore" }, // ★ ここを 'explore' に
-    { label: "About Miles", id: "about" },
-    { label: "All Tours", id: "tours" },            // ★ ここを 'tours' に
+    { label: "About Miles", id: "about" },        
     { label: "How It Works", id: "how-it-works" },
     { label: "FAQ", id: "faq" },
     { label: "Contact Us", id: "contact" },
