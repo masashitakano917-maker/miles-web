@@ -13,17 +13,17 @@ const Experiences: React.FC<ExperiencesProps> = ({ onViewDetails, onBookNow }) =
       image: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=600",
       experiences: [
         {
-          title: "Traditional Cooking with Nonna",
-          location: "Rome, Italy",
-          price: "$89",
+          title: "Traditional Cooking with Naomi",
+          location: "Tokyo, Japan",
+          price: "JPY 8,000",
           duration: "3 hours",
           groupSize: "4-6 people",
           image: "https://images.pexels.com/photos/3184183/pexels-photo-3184183.jpeg?auto=compress&cs=tinysrgb&w=400"
         },
         {
-          title: "Street Food Walking Tour",
-          location: "Bangkok, Thailand",
-          price: "$45",
+          title: "Street Food Walking Tour in Asakusa",
+          location: "Tokyo, Japan",
+          price: "JPY 4,000 ",
           duration: "2.5 hours",
           groupSize: "6-8 people",
           image: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400"
@@ -35,16 +35,16 @@ const Experiences: React.FC<ExperiencesProps> = ({ onViewDetails, onBookNow }) =
       image: "https://images.pexels.com/photos/2422588/pexels-photo-2422588.jpeg?auto=compress&cs=tinysrgb&w=600",
       experiences: [
         {
-          title: "Tea Ceremony & Philosophy",
+          title: "Private Tea Ceremony & Zen in Teample",
           location: "Kyoto, Japan",
-          price: "$75",
-          duration: "2 hours",
+          price: "JPY 30,000",
+          duration: "4 hours",
           groupSize: "3-5 people",
           image: "https://images.pexels.com/photos/2422588/pexels-photo-2422588.jpeg?auto=compress&cs=tinysrgb&w=400"
         },
         {
-          title: "Flamenco & Stories",
-          location: "Seville, Spain",
+          title: "Sample",
+          location: "Kyoto, Japan",
           price: "$65",
           duration: "3 hours",
           groupSize: "4-8 people",
